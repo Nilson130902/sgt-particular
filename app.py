@@ -18,4 +18,4 @@ def reservar():
     return f"<h3>¡Reserva confirmada con éxito para {nombre} en el asiento {asiento}!</h3><br><a href='/'>Volver al inicio</a>"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True) 
