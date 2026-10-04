@@ -3,109 +3,494 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SGT - Croquis de Asientos</title>
+    <title>SGT-Particular - Control de Flota y Reservas</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
     <style>
-        .asiento {
-            width: 50px;
-            height: 50px;
-            margin: 5px;
+        .bus-container {
+            max-width: 340px;
+            margin: 0 auto;
+            background: #ffffff;
+            border: 3px solid #495057;
+            border-radius: 24px 24px 12px 12px;
+            padding: 18px 14px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+        }
+        .bus-front {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 2px dashed #adb5bd;
+            margin-bottom: 16px;
+        }
+        .driver-seat {
+            background: #212529;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
             font-weight: bold;
         }
-        .asiento.ocupado {
+        .bus-door {
+            border: 1px dashed #0d6efd;
+            color: #0d6efd;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .bus-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr) 24px repeat(2, 1fr);
+            gap: 10px;
+            align-items: center;
+        }
+        .aisle {
+            grid-column: 3;
+            text-align: center;
+            font-size: 0.65rem;
+            color: #ced4da;
+            text-transform: uppercase;
+            writing-mode: vertical-lr;
+            letter-spacing: 2px;
+        }
+        .seat-box {
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.88rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+            border: 2px solid #ced4da;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        .seat-box:hover {
+            border-color: #0d6efd;
+            color: #0d6efd;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(13,110,253,0.15);
+        }
+        .seat-box.selected {
+            background-color: #0d6efd !important;
+            color: white !important;
+            border-color: #0a58ca !important;
+            box-shadow: 0 4px 8px rgba(13,110,253,0.3);
+        }
+        .seat-occupied {
             background-color: #dc3545 !important;
-            color: white;
+            color: white !important;
+            border-color: #b02a37 !important;
             cursor: not-allowed;
+            opacity: 0.85;
         }
-        .asiento.seleccionado {
-            background-color: #198754 !important;
-            color: white;
-        }
-        .pasillo {
-            width: 30px;
+        .seat-occupied:hover {
+            transform: none;
+            box-shadow: none;
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container py-4">
-        <h2 class="text-center mb-4">Sistema de Gestión de Transporte</h2>
-        
-        <div class="row">
-            <!-- Croquis del Vehículo -->
-            <div class="col-md-6 mb-4">
-                <div class="card shadow-sm p-4">
-                    <h4 class="card-title text-center mb-3">Croquis del Vehículo</h4>
-                    <p class="text-muted text-center small">Haz clic en un asiento disponible para elegirlo</p>
+<body class="bg-light text-dark pb-5">
 
-                    <div class="d-flex flex-column align-items-center bg-white p-3 border rounded">
-                        <!-- Conductor / Frente -->
-                        <div class="w-100 text-end mb-3 pe-3">
-                            <span class="badge bg-secondary p-2">🚍 Conductor</span>
-                        </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-bus-front-fill me-2"></i>SGT-Particular</a>
+            
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-white small me-2 d-none d-md-inline">
+                    <i class="bi bi-person-circle me-1"></i>{{ session.nombre or 'Administrador' }}
+                </span>
+                
+                <a href="/conductor?vehiculo_id={{ unidad.id }}" class="btn btn-light btn-sm text-primary fw-bold">
+                    <i class="bi bi-phone me-1"></i> Vista Conductor
+                </a>
+                
+                <a href="/liquidacion?vehiculo_id={{ unidad.id }}" target="_blank" class="btn btn-warning btn-sm fw-bold">
+                    <i class="bi bi-calculator me-1"></i> Cierre de Caja
+                </a>
+                
+                <a href="/logout" class="btn btn-outline-light btn-sm fw-bold">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
 
-                        <!-- Filas de Asientos -->
-                        <div class="d-flex mb-2">
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('A1', this)">A1</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('A2', this)">A2</button>
-                            <div class="pasillo"></div>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('A3', this)">A3</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('A4', this)">A4</button>
-                        </div>
+    <div class="container">
 
-                        <div class="d-flex mb-2">
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('B1', this)">B1</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('B2', this)">B2</button>
-                            <div class="pasillo"></div>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('B3', this)">B3</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('B4', this)">B4</button>
-                        </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm d-flex justify-content-between align-items-center" role="alert">
+                <div>{{ message|safe }}</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
 
-                        <div class="d-flex mb-2">
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('C1', this)">C1</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('C2', this)">C2</button>
-                            <div class="pasillo"></div>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('C3', this)">C3</button>
-                            <button class="btn btn-outline-primary asiento" onclick="seleccionarAsiento('C4', this)">C4</button>
-                        </div>
+        <div class="card bg-white border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold text-secondary mb-1">Unidad de Transporte:</label>
+                        <form method="GET" action="/">
+                            <select name="vehiculo_id" class="form-select border-secondary-subtle fw-semibold" onchange="this.form.submit()">
+                                {% for v in flota %}
+                                    <option value="{{ v.id }}" {% if v.id == unidad.id %}selected{% endif %}>
+                                        [{{ v.tipo }}] {{ v.modelo }} - {{ v.placa }} ({{ v.chofer }}) - Status: {{ v.estado }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                    <div class="col-md-6 text-md-end mt-3 mt-md-0 d-flex justify-content-md-end align-items-center gap-2">
+                        <button class="btn btn-outline-success btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalNuevoVehiculo">
+                            <i class="bi bi-plus-lg me-1"></i> Añadir Vehículo
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#modalEditarVehiculo">
+                            <i class="bi bi-pencil me-1"></i> Modificar
+                        </button>
+                        <span class="badge bg-dark fs-6 px-3 py-2">{{ unidad.placa }}</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Formulario de Reserva -->
-            <div class="col-md-6">
-                <div class="card shadow-sm p-4">
-                    <h4 class="card-title mb-3">Formulario de Reserva</h4>
-                    <form action="/reservar" method="POST">
-                        <div class="mb-3">
-                            <label for="nombre" class="form-label">Nombre del Pasajero</label>
-                            <input type="text" class="form-control" id="nombre" name="nombre" required placeholder="Ej. Juan Pérez">
+        <div class="row g-4 mb-4">
+            
+            <div class="col-lg-7">
+                
+                <div class="card bg-white border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom text-primary d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-grid-3x3-gap-fill me-2"></i> Croquis de Asientos ({{ unidad.modelo }})</span>
+                        <span class="badge bg-secondary">{{ unidad.capacidad }} Pasajeros</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="bus-container shadow-sm">
+                            <div class="bus-front">
+                                <span class="bus-door"><i class="bi bi-door-open me-1"></i>Puerta</span>
+                                <span class="driver-seat"><i class="bi bi-steering-wheel me-1"></i> Chofer</span>
+                            </div>
+
+                            <div class="bus-grid">
+                                {% for i in range(1, unidad.capacidad + 1) %}
+                                    {% set code = 'A' ~ i %}
+                                    {% set col = (i - 1) % 4 %}
+                                    
+                                    {% if col == 2 %}
+                                        <div class="aisle">Pasillo</div>
+                                    {% endif %}
+
+                                    {% if code in asientos_ocupados %}
+                                        <div class="seat-box seat-occupied" title="Asiento ocupado">
+                                            <i class="bi bi-person-fill me-1"></i>{{ code }}
+                                        </div>
+                                    {% else %}
+                                        <div class="seat-box seat-free" id="seat-{{ code }}" onclick="seleccionarAsiento('{{ code }}')" title="Disponible - Clic para elegir">
+                                            {{ code }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="asientoInput" class="form-label">Asiento Seleccionado</label>
-                            <input type="text" class="form-control fw-bold text-success" id="asientoInput" name="asiento" readonly required placeholder="Selecciona un asiento en el croquis">
+                        <div class="d-flex justify-content-center gap-3 mt-3 small fw-semibold text-secondary">
+                            <div><span class="badge bg-light text-dark border me-1">A1</span> Disponible</div>
+                            <div><span class="badge bg-primary me-1">A1</span> Seleccionado</div>
+                            <div><span class="badge bg-danger me-1">A1</span> Ocupado</div>
                         </div>
-
-                        <button type="submit" class="btn btn-primary w-100">Confirmar Reserva</button>
-                    </form>
+                    </div>
                 </div>
+
+                <!-- FORMULARIO DE RESERVA DE PASAJES CON TELÉFONO Y HORA DE SALIDA -->
+                <div class="card bg-white border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom text-primary">
+                        <i class="bi bi-ticket-perforated me-2"></i> Formulario de Reserva
+                    </div>
+                    <div class="card-body">
+                        <form action="/reservar" method="POST" class="p-3 bg-light rounded border">
+                            <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-7">
+                                    <label class="form-label small fw-bold">Nombre del Pasajero:</label>
+                                    <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Ej: Juan Pérez" required>
+                                </div>
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold">Teléfono (WhatsApp):</label>
+                                    <input type="tel" name="telefono" class="form-control form-control-sm" placeholder="Ej: 593991234567">
+                                </div>
+                            </div>
+
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-5">
+                                    <label class="form-label small fw-bold">Ruta / Destino:</label>
+                                    <select name="ruta_id" class="form-select form-select-sm" required>
+                                        {% for r in rutas %}
+                                            <option value="{{ r.id }}">{{ r.origen }} - {{ r.destino }} (${{ "%.2f"|format(r.precio) }})</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Hora Salida:</label>
+                                    <input type="time" name="hora_salida" class="form-control form-control-sm" value="14:00" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold">Asiento:</label>
+                                    <input type="text" name="asiento" id="inputAsiento" class="form-control form-control-sm fw-bold text-primary" placeholder="Toca croquis" readonly required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-sm w-100 fw-bold" {% if unidad.estado == 'Mantenimiento' %}disabled{% endif %}>
+                                Registrar Reserva
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- BUSCADOR Y LISTA CON BOTÓN DIRECTO DE WHATSAPP -->
+                <div class="card bg-white border-0 shadow-sm">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <span class="text-primary"><i class="bi bi-people-fill me-2"></i> Pasajeros Confirmados ({{ stats.ocupados }}/{{ unidad.capacidad }})</span>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="/" class="mb-3">
+                            <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" name="buscar_pasajero" class="form-control" placeholder="Buscar pasajero por nombre..." value="{{ search_query }}">
+                                {% if search_query %}
+                                    <a href="/?vehiculo_id={{ unidad.id }}" class="btn btn-outline-secondary">Limpiar</a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary fw-bold">Buscar</button>
+                            </div>
+                        </form>
+
+                        <ul class="list-group list-group-flush border rounded">
+                            {% for r in reservas %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <span class="badge bg-primary me-2">{{ r.asiento }}</span>
+                                        <strong>{{ r.nombre }}</strong>
+                                        {% if r.telefono %}<small class="text-muted ms-1">({{ r.telefono }})</small>{% endif %}
+                                        <small class="text-muted d-block ms-4">
+                                            <i class="bi bi-clock me-1"></i>Salida: {{ r.hora_salida }} | Registrado: {{ r.fecha }}
+                                        </small>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-success fw-bold me-1">${{ "%.2f"|format(r.precio) }}</span>
+                                        
+                                        <!-- BOTÓN DIRECTO DE WHATSAPP -->
+                                        <a href="{{ r.whatsapp_link }}" target="_blank" class="btn btn-sm btn-outline-success border-0 fs-5 p-0 me-1" title="Enviar Boleto por WhatsApp">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+
+                                        <form action="/eliminar_reserva/{{ r.id }}?vehiculo_id={{ unidad.id }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" onclick="return confirm('¿Confirmar cancelación de la reserva de {{ r.nombre }} (Asiento {{ r.asiento }})?')" title="Cancelar Pasajero">
+                                                <i class="bi bi-trash-fill fs-6"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </li>
+                            {% else %}
+                                <li class="list-group-item text-center text-muted">No hay pasajeros registrados o coincidentes.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="col-lg-5">
+                
+                <div class="card bg-white border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom text-primary d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-map me-2"></i> Rutas y Tarifas</span>
+                        <button class="btn btn-outline-primary btn-sm fw-bold" data-bs-toggle="collapse" data-bs-target="#formRuta">+ Nueva Ruta</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="collapse mb-3 p-3 bg-light rounded border" id="formRuta">
+                            <form action="/agregar_ruta" method="POST" class="row g-2">
+                                <div class="col-5"><input type="text" name="origen" class="form-control form-control-sm" value="Puyo" placeholder="Origen"></div>
+                                <div class="col-4"><input type="text" name="destino" class="form-control form-control-sm" placeholder="Destino" required></div>
+                                <div class="col-3"><input type="number" step="0.50" name="precio" class="form-control form-control-sm" placeholder="Precio ($)" required></div>
+                                <div class="col-12"><button type="submit" class="btn btn-success btn-sm w-100 fw-bold mt-1">Guardar Ruta</button></div>
+                            </form>
+                        </div>
+
+                        <div class="d-flex flex-column gap-2">
+                            {% for r in rutas %}
+                                <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-light">
+                                    <span class="small fw-semibold"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ r.origen }} ➔ {{ r.destino }}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary">${{ "%.2f"|format(r.precio) }}</span>
+                                        <button class="btn btn-sm btn-link text-secondary p-0" data-bs-toggle="modal" data-bs-target="#modalEditarRuta{{ r.id }}"><i class="bi bi-pencil"></i></button>
+                                        <form action="/eliminar_ruta/{{ r.id }}" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-sm btn-link text-danger p-0" onclick="return confirm('¿Eliminar esta ruta?')"><i class="bi bi-trash"></i></button>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="modal fade" id="modalEditarRuta{{ r.id }}" tabindex="-1">
+                                    <div class="modal-dialog modal-sm">
+                                        <div class="modal-content">
+                                            <div class="modal-header"><h6 class="modal-title fw-bold">Editar Ruta</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                                            <form action="/editar_ruta" method="POST">
+                                                <div class="modal-body">
+                                                    <input type="hidden" name="ruta_id" value="{{ r.id }}">
+                                                    <div class="mb-2"><label class="form-label small">Origen</label><input type="text" name="origen" class="form-control form-control-sm" value="{{ r.origen }}" required></div>
+                                                    <div class="mb-2"><label class="form-label small">Destino</label><input type="text" name="destino" class="form-control form-control-sm" value="{{ r.destino }}" required></div>
+                                                    <div class="mb-2"><label class="form-label small">Precio ($)</label><input type="number" step="0.50" name="precio" class="form-control form-control-sm" value="{{ r.precio }}" required></div>
+                                                </div>
+                                                <div class="modal-footer"><button type="submit" class="btn btn-primary btn-sm w-100 fw-bold">Guardar Cambios</button></div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card bg-white border-0 shadow-sm">
+                    <div class="card-header bg-white fw-bold py-3 border-bottom text-primary d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-receipt me-2"></i> Gastos / Viáticos</span>
+                        <button class="btn btn-outline-danger btn-sm fw-bold" data-bs-toggle="collapse" data-bs-target="#formViaticoAdmin">+ Registrar Gasto</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="collapse mb-3 p-3 bg-light rounded border" id="formViaticoAdmin">
+                            <form action="/registrar_viatico" method="POST">
+                                <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6">
+                                        <select name="concepto" class="form-select form-select-sm" required>
+                                            <option value="Combustible">Combustible</option>
+                                            <option value="Peaje">Peaje</option>
+                                            <option value="Alimentación">Alimentación</option>
+                                            <option value="Mantenimiento Menor">Mantenimiento</option>
+                                            <option value="Otro">Otro</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6"><input type="number" step="0.01" name="monto" class="form-control form-control-sm" placeholder="Monto ($)" required></div>
+                                </div>
+                                <input type="text" name="descripcion" class="form-control form-control-sm mb-2" placeholder="Detalle opcional">
+                                <button type="submit" class="btn btn-danger btn-sm w-100 fw-bold">Guardar Gasto</button>
+                            </form>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr><th>Concepto</th><th>Monto</th><th class="text-end">Acción</th></tr>
+                                </thead>
+                                <tbody>
+                                    {% for v in viaticos %}
+                                        <tr>
+                                            <td><span class="badge bg-secondary me-1">{{ v.concepto }}</span><small class="text-muted d-block">{{ v.descripcion or '-' }}</small></td>
+                                            <td class="fw-bold text-danger">-${{ "%.2f"|format(v.monto) }}</td>
+                                            <td class="text-end">
+                                                <form action="/eliminar_viatico/{{ v.id }}" method="POST" style="display:inline;">
+                                                    <button type="submit" class="btn btn-link text-danger p-0 border-0" onclick="return confirm('¿Eliminar viático?')"><i class="bi bi-trash-fill"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% else %}
+                                        <tr><td colspan="3" class="text-center text-muted small py-2">Sin gastos registrados.</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="modal fade" id="modalNuevoVehiculo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white"><h5 class="modal-title fw-bold">Añadir Nuevo Vehículo</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <form action="/agregar_vehiculo" method="POST">
+                    <div class="modal-body">
+                        <div class="mb-2"><label class="form-label small fw-bold">Placa:</label><input type="text" name="placa" class="form-control" placeholder="Ej: PBC-1234" required></div>
+                        <div class="mb-2"><label class="form-label small fw-bold">Modelo:</label><input type="text" name="modelo" class="form-control" placeholder="Ej: Hyundai H350" required></div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Tipo de Vehículo:</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="Buseta">Buseta</option>
+                                    <option value="Bus">Bus</option>
+                                    <option value="Furgoneta">Furgoneta</option>
+                                    <option value="Auto / SUV">Auto / SUV</option>
+                                </select>
+                            </div>
+                            <div class="col-6"><label class="form-label small fw-bold">Capacidad Pasajeros:</label><input type="number" name="capacidad" class="form-control" value="12" min="1" required></div>
+                        </div>
+                        <div class="mb-2"><label class="form-label small fw-bold">Chofer Asignado:</label><input type="text" name="chofer" class="form-control" placeholder="Ej: Juan Pérez" required></div>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-success fw-bold w-100">Guardar Vehículo</button></div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarVehiculo" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-secondary text-white"><h5 class="modal-title fw-bold">Modificar Vehículo</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <form action="/editar_vehiculo" method="POST">
+                    <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                    <div class="modal-body">
+                        <div class="mb-2"><label class="form-label small fw-bold">Placa:</label><input type="text" name="placa" class="form-control" value="{{ unidad.placa }}" required></div>
+                        <div class="mb-2"><label class="form-label small fw-bold">Modelo:</label><input type="text" name="modelo" class="form-control" value="{{ unidad.modelo }}" required></div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Tipo:</label>
+                                <select name="tipo" class="form-select">
+                                    <option value="Buseta" {% if unidad.tipo == 'Buseta' %}selected{% endif %}>Buseta</option>
+                                    <option value="Bus" {% if unidad.tipo == 'Bus' %}selected{% endif %}>Bus</option>
+                                    <option value="Furgoneta" {% if unidad.tipo == 'Furgoneta' %}selected{% endif %}>Furgoneta</option>
+                                    <option value="Auto / SUV" {% if unidad.tipo == 'Auto / SUV' %}selected{% endif %}>Auto / SUV</option>
+                                </select>
+                            </div>
+                            <div class="col-6"><label class="form-label small fw-bold">Capacidad:</label><input type="number" name="capacidad" class="form-control" value="{{ unidad.capacidad }}" required></div>
+                        </div>
+                        <div class="mb-2"><label class="form-label small fw-bold">Chofer:</label><input type="text" name="chofer" class="form-control" value="{{ unidad.chofer }}" required></div>
+                        <div class="mb-2"><label class="form-label small fw-bold">Mantenimiento:</label><input type="text" name="mantenimiento" class="form-control" value="{{ unidad.mantenimiento }}" required></div>
+                    </div>
+                    <div class="modal-footer"><button type="submit" class="btn btn-primary fw-bold w-100">Guardar Cambios</button></div>
+                </form>
             </div>
         </div>
     </div>
 
     <script>
-        function seleccionarAsiento(codigo, elemento) {
-            // Quitar clase 'seleccionado' de otros botones
-            document.querySelectorAll('.asiento').forEach(btn => {
-                btn.classList.remove('seleccionado');
-            });
+    function seleccionarAsiento(codigo) {
+        document.querySelectorAll('.seat-box.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
 
-            // Seleccionar el botón actual
-            elemento.classList.add('seleccionado');
-
-            // Asignar al input del formulario
-            document.getElementById('asientoInput').value = codigo;
+        const asientoEl = document.getElementById('seat-' + codigo);
+        if (asientoEl) {
+            asientoEl.classList.add('selected');
         }
+
+        const inputAsiento = document.getElementById('inputAsiento');
+        if (inputAsiento) {
+            inputAsiento.value = codigo;
+        }
+    }
     </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

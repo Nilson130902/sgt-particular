@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Conductor - SGT-Particular</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light text-dark pb-5">
+
+    <!-- Navegación Única Conductor -->
+    <nav class="navbar navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container">
+            <span class="navbar-brand fw-bold mb-0">
+                <i class="bi bi-bus-front-fill me-2"></i>Panel Conductor
+            </span>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-white small d-none d-md-inline">
+                    <i class="bi bi-person-circle me-1"></i>{{ session.nombre }}
+                </span>
+                {% if session.rol == 'admin' %}
+                    <a href="/?vehiculo_id={{ unidad.id }}" class="btn btn-warning btn-sm fw-bold">
+                        <i class="bi bi-speedometer2 me-1"></i> Panel Principal
+                    </a>
+                {% endif %}
+                <a href="/logout" class="btn btn-outline-light btn-sm fw-bold">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message|safe }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <!-- Encabezado de la Unidad -->
+        <div class="card bg-white border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h2 class="fw-bold mb-0 text-primary">{{ unidad.modelo }}</h2>
+                        <span class="text-muted"><i class="bi bi-person-badge me-1"></i>Conductor: {{ unidad.chofer }}</span>
+                    </div>
+                    <span class="badge bg-dark fs-5 px-3 py-2">{{ unidad.placa }}</span>
+                </div>
+
+                <form action="/cambiar_estado_flota" method="POST" class="row align-items-center g-2 bg-light p-3 rounded border">
+                    <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                    <div class="col-md-3 fw-bold text-secondary">Estado Actual:</div>
+                    <div class="col-md-6">
+                        <select name="estado" class="form-select fw-bold border-secondary-subtle">
+                            <option value="En Servicio" {% if unidad.estado == 'En Servicio' %}selected{% endif %}>En Servicio</option>
+                            <option value="En Ruta" {% if unidad.estado == 'En Ruta' %}selected{% endif %}>En Ruta</option>
+                            <option value="Mantenimiento" {% if unidad.estado == 'Mantenimiento' %}selected{% endif %}>Mantenimiento</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-primary w-100 fw-bold">Actualizar Estado</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Estadísticas de Ocupación -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="card border-0 shadow-sm bg-white text-center p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Pasajeros Ocupados</span>
+                    <h1 class="fw-bold text-primary display-5 my-1">{{ stats.ocupados }}</h1>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card border-0 shadow-sm bg-white text-center p-3">
+                    <span class="text-muted small fw-bold text-uppercase">Asientos Libres</span>
+                    <h1 class="fw-bold text-success display-5 my-1">{{ stats.disponibles }}</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registro de Gastos / Viáticos -->
+        <div class="card bg-white border-0 shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold py-3 border-bottom text-primary d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-receipt me-2"></i> Registrar Comprobante de Gasto</span>
+            </div>
+            <div class="card-body">
+                <form action="/registrar_viatico" method="POST" class="row g-3">
+                    <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Concepto:</label>
+                        <select name="concepto" class="form-select form-select-sm" required>
+                            <option value="Combustible">Combustible</option>
+                            <option value="Peaje">Peaje</option>
+                            <option value="Alimentación">Alimentación</option>
+                            <option value="Mantenimiento Menor">Mantenimiento Menor</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Monto ($):</label>
+                        <input type="number" step="0.01" name="monto" class="form-control form-control-sm" placeholder="0.00" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-bold">Detalle / Descripción:</label>
+                        <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Ej: Recarga diésel en estación">
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="submit" class="btn btn-success fw-bold px-4">Guardar Comprobante</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista de Pasajeros de la Unidad -->
+        <div class="card bg-white border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold py-3 border-bottom text-primary">
+                <i class="bi bi-people-fill me-2"></i> Lista de Pasajeros Abordo ({{ stats.ocupados }})
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush border rounded">
+                    {% for r in reservas %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                            <div>
+                                <span class="badge bg-primary fs-6 me-2">{{ r.asiento }}</span>
+                                <strong class="fs-6">{{ r.nombre }}</strong>
+                                <small class="text-muted d-block ms-4"><i class="bi bi-clock me-1"></i>{{ r.fecha }}</small>
+                            </div>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-bold">Confirmado</span>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-center text-muted py-3">No hay pasajeros asignados a esta unidad.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

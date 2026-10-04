@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro Conductor - SGT-Particular</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center vh-100">
+
+    <div class="card bg-white border-0 shadow-sm p-4" style="max-width: 420px; width: 100%;">
+        <div class="text-center mb-3">
+            <h4 class="fw-bold text-dark mb-1"><i class="bi bi-person-badge text-primary me-2"></i>Registro de Conductor</h4>
+            <p class="text-muted small">Crea tu cuenta para gestionar tu unidad asignada</p>
+        </div>
+
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }} alert-dismissible fade show small" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/registro" method="POST">
+            <div class="mb-2">
+                <label class="form-label small fw-bold">Nombre Completo</label>
+                <input type="text" name="nombre" class="form-control form-control-sm" placeholder="Ej: Carlos Mendoza" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-bold">Usuario para Ingresar</label>
+                <input type="text" name="username" class="form-control form-control-sm" placeholder="Ej: carlos" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label small fw-bold">Contraseña</label>
+                <input type="password" name="password" class="form-control form-control-sm" placeholder="••••••••" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Unidad / Vehículo Asignado</label>
+                <select name="vehiculo_id" class="form-select form-select-sm" required>
+                    {% for v in vehiculos %}
+                        <option value="{{ v.id }}">[{{ v.tipo }}] {{ v.modelo }} - {{ v.placa }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-success w-100 fw-bold py-2 shadow-sm">Completar Registro</button>
+        </form>
+
+        <div class="text-center mt-3 pt-2 border-top">
+            <a href="/login" class="small fw-bold text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Volver al Inicio de Sesión</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
