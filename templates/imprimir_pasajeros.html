@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Manifiesto de Pasajeros - {{ unidad.modelo }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-white p-4" onload="window.print()">
+
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+            <h3 class="fw-bold mb-0 text-primary"><i class="bi bi-bus-front-fill me-2"></i>SGT-PARTICULAR</h3>
+            <p class="text-muted mb-0">Manifiesto Oficial de Pasajeros</p>
+        </div>
+        <button onclick="window.print()" class="btn btn-primary btn-sm no-print fw-bold">
+            <i class="bi bi-printer me-1"></i> Imprimir / Guardar PDF
+        </button>
+    </div>
+
+    <div class="row mb-4 bg-light p-3 rounded border">
+        <div class="col-6">
+            <p class="mb-1"><strong>Unidad:</strong> {{ unidad.modelo }} ({{ unidad.placa }})</p>
+            <p class="mb-0"><strong>Conductor:</strong> {{ unidad.chofer }}</p>
+        </div>
+        <div class="col-6 text-end">
+            <p class="mb-1"><strong>Fecha de Reporte:</strong> {{ fecha_impresion }}</p>
+            <p class="mb-0"><strong>Ocupación:</strong> {{ reservas|length }}/{{ unidad.capacidad }} Pasajeros</p>
+        </div>
+    </div>
+
+    <table class="table table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th style="width: 10%;">Asiento</th>
+                <th>Nombre del Pasajero</th>
+                <th>Teléfono</th>
+                <th>Hora Salida</th>
+                <th>Precio</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in reservas %}
+                <tr>
+                    <td class="fw-bold text-center">{{ r.asiento }}</td>
+                    <td>{{ r.nombre }}</td>
+                    <td>{{ r.telefono or '-' }}</td>
+                    <td>{{ r.hora_salida }}</td>
+                    <td>${{ "%.2f"|format(r.precio) }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No hay pasajeros registrados en esta unidad.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>

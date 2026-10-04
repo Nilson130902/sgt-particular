@@ -3,96 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cierre de Caja - SGT-Particular</title>
+    <title>SGT-Particular - Cierre de Caja</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 </head>
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="/"><i class="bi bi-bus-front-fill me-2"></i>SGT-Particular</a>
-        <div class="d-flex align-items-center gap-3">
-            <span class="text-white small d-none d-md-inline"><i class="bi bi-person-circle me-1"></i>{{ session.nombre }} (Admin)</span>
-            <a href="/liquidacion?vehiculo_id={{ unidad.id }}" target="_blank" class="btn btn-warning btn-sm fw-bold">
-                <i class="bi bi-calculator me-1"></i> Cierre de Caja
-            </a>
-            <a href="/logout" class="btn btn-outline-light btn-sm fw-bold">
-                <i class="bi bi-box-arrow-right"></i> Salir
-            </a>
-        </div>
-    </div>
-</nav>
-<body class="bg-light text-dark pb-5">
+<body class="bg-light">
 
-    <nav class="navbar navbar-dark bg-dark shadow-sm mb-4">
-        <div class="container">
-            <span class="navbar-brand fw-bold"><i class="bi bi-calculator-fill me-2 text-warning"></i>Cierre de Caja y Liquidación</span>
-            <span class="badge bg-secondary">{{ unidad.modelo }} - {{ unidad.placa }}</span>
+    <!-- Navegación -->
+     
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand fw-bold" href="/"><i class="bi bi-calculator me-2"></i>Cierre de Caja y Contabilidad</a>
+            <button type="button" onclick="volverYCerrar()" class="btn btn-outline-light btn-sm">
+             <i class="bi bi-arrow-left me-1"></i> Volver al Panel
+            </button>
         </div>
     </nav>
+    <script>
+    function volverYCerrar() {
+        // Intentar enfocar la ventana origen (el panel principal)
+        if (window.opener && !window.opener.closed) {
+            try {
+                window.opener.focus();
+            } catch(e) {
+                console.log(e);
+            }
+        }
+        
+        // Forzar el cierre de la pestaña actual
+        window.open('', '_self', '');
+        window.close();
 
-    <div class="container">
+        // Respaldo por si el navegador bloquea el cierre: redirige en la misma ventana
+        setTimeout(function() {
+            window.location.href = "/?vehiculo_id={{ unidad.id if unidad else '' }}";
+        }, 150);
+    }
+    </script>
 
-        <!-- Muestras de Ganancia -->
-        <div class="row text-center g-3 mb-4">
-            <div class="col-md-4">
-                <div class="p-3 bg-white rounded shadow-sm border">
-                    <span class="small text-muted d-block fw-bold">Total Ingresos (Pasajes)</span>
-                    <span class="fs-3 fw-bold text-success">+${{ "%.2f"|format(total_ingresos) }}</span>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-3 bg-white rounded shadow-sm border">
-                    <span class="small text-muted d-block fw-bold">Total Gastos (Viáticos)</span>
-                    <span class="fs-3 fw-bold text-danger">-${{ "%.2f"|format(total_viaticos) }}</span>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="p-3 bg-white rounded shadow-sm border">
-                    <span class="small text-muted d-block fw-bold">Ganancia Neta</span>
-                    <span class="fs-3 fw-bold {% if ganancia_neta >= 0 %}text-primary{% else %}text-danger{% endif %}">${{ "%.2f"|format(ganancia_neta) }}</span>
-                </div>
-            </div>
-        </div>
+    <div class="container px-4">
 
-        <!-- Botón de Ejecución -->
-        <div class="card bg-white border-0 shadow-sm mb-4">
+        <!-- Mensajes Flash -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Resumen del Cierre Actual -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white py-3 fw-bold">
+                <i class="bi bi-bus-front me-2 text-primary"></i> Estado Financiero Actual: {{ unidad.modelo }} ({{ unidad.placa }})
+            </div>
             <div class="card-body">
-                <form action="/cerrar_caja" method="POST" onsubmit="return confirm('¿Confirmas el cierre de caja para esta unidad?')">
+                <div class="row text-center g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-success bg-opacity-10 border border-success rounded">
+                            <span class="text-success fw-bold d-block">(+) Ingresos por Pasajes</span>
+                            <h3 class="fw-bold text-success mb-0">${{ "%.2f"|format(total_ingresos) }}</h3>
+                            <small class="text-muted">{{ reservas|length }} pasajes vendidos</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded">
+                            <span class="text-danger fw-bold d-block">(-) Gastos y Viáticos</span>
+                            <h3 class="fw-bold text-danger mb-0">${{ "%.2f"|format(total_viaticos) }}</h3>
+                            <small class="text-muted">{{ viaticos|length }} gastos registrados</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-3 bg-primary bg-opacity-10 border border-primary rounded">
+                            <span class="text-primary fw-bold d-block">(=) Ganancia Neta</span>
+                            <h3 class="fw-bold text-primary mb-0">${{ "%.2f"|format(ganancia_neta) }}</h3>
+                            <small class="text-muted">Total a liquidar</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de Cerrar Caja y Guardar -->
+                <form action="/cerrar_caja" method="POST" onsubmit="return confirm('¿Está seguro de cerrar la caja de esta unidad? Se registrará el saldo y se reiniciarán los pasajes y gastos para la siguiente salida.');">
                     <input type="hidden" name="vehiculo_id" value="{{ unidad.id }}">
-                    <button type="submit" class="btn btn-warning btn-lg w-100 fw-bold shadow-sm">
-                        <i class="bi bi-check-circle-fill me-2"></i> Confirmar Cierre de Caja y Finalizar Viaje
+                    <button type="submit" class="btn btn-warning w-100 btn-lg fw-bold shadow-sm">
+                        <i class="bi bi-check-circle-fill me-2"></i> Cerrar Caja y Guardar Registro
                     </button>
                 </form>
             </div>
         </div>
 
-        <!-- Historial -->
-        {% if historial_viajes %}
-            <div class="card bg-white border-0 shadow-sm">
-                <div class="card-header bg-white fw-bold py-3 border-bottom"><i class="bi bi-clock-history me-2"></i> Historial de Viajes Finalizados</div>
-                <div class="card-body p-0">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr><th>Fecha</th><th>Vehículo</th><th>Conductor</th><th>Pasajeros</th><th>Ingresos</th><th>Gastos</th><th>Ganancia Neta</th></tr>
+        <!-- Tabla de Historial con Opciones de Exportación -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold text-primary mb-0"><i class="bi bi-clock-history me-2"></i>Historial de Cierres de Caja</h5>
+                <!-- BOTÓN PARA EXPORTAR HISTORIAL EN EXCEL/CSV -->
+                <a href="/exportar_cierres_csv" class="btn btn-success btn-sm fw-bold">
+                    <i class="bi bi-file-earmark-excel me-1"></i> Exportar Historial a CSV
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Fecha Cierre</th>
+                                <th>Vehículo</th>
+                                <th>Chofer</th>
+                                <th>Pasajeros</th>
+                                <th>Ingresos</th>
+                                <th>Gastos</th>
+                                <th>Ganancia Neta</th>
+                            </tr>
                         </thead>
                         <tbody>
                             {% for h in historial_viajes %}
                                 <tr>
-                                    <td>{{ h.fecha_cierre }}</td>
-                                    <td class="fw-semibold">{{ h.vehiculo }}</td>
+                                    <td>{{ h.id }}</td>
+                                    <td><small>{{ h.fecha_cierre }}</small></td>
+                                    <td class="fw-bold">{{ h.vehiculo }}</td>
                                     <td>{{ h.chofer }}</td>
-                                    <td><span class="badge bg-info text-dark">{{ h.pasajeros_totales }}</span></td>
-                                    <td class="text-success">+${{ "%.2f"|format(h.ingresos) }}</td>
-                                    <td class="text-danger">-${{ "%.2f"|format(h.gastos) }}</td>
-                                    <td class="fw-bold text-primary">${{ "%.2f"|format(h.ganancia_neta) }}</td>
+                                    <td class="text-center">{{ h.pasajeros_totales }}</td>
+                                    <td class="text-success fw-bold">${{ "%.2f"|format(h.ingresos) }}</td>
+                                    <td class="text-danger">${{ "%.2f"|format(h.gastos) }}</td>
+                                    <td class="text-primary fw-bold">${{ "%.2f"|format(h.ganancia_neta) }}</td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay cierres de caja registrados en el historial.</td>
                                 </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
-        {% endif %}
+        </div>
 
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
